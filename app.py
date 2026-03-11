@@ -3,18 +3,40 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 
-# دالة تحميل الموديل الذكية
+# إعداد واجهة التطبيق
+st.set_page_config(page_title="Pneumonia Detection AI", page_icon="🩺")
+
 @st.cache_resource
 def load_my_model():
+    # تحميل الموديل بدون عمل compile لتفادي تعارض النسخ
     try:
-        # المحاولة الأولى: التحميل العادي مع تعطيل الـ Compile
-        return tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
-    except Exception:
-        # المحاولة الثانية: لو النسخة مختلفة تماماً، بنستخدم الـ Legacy loader
-        return tf.keras.layers.TFSMLayer('my_pneumonia_model.h5', call_endpoint='serving_default')
+        model = tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
+        return model
+    except Exception as e:
+        st.error(f"خطأ في تحميل الموديل: {e}")
+        return None
 
 model = load_my_model()
 
-# باقي الكود كما هو...
 st.title("تشخيص الالتهاب الرئوي بالذكاء الاصطناعي 🩺")
-# ... كمل باقي الكود بتاع الـ uploader والـ predict
+st.write("ارفع صورة أشعة الصدر لتحليلها فوراً")
+
+uploaded_file = st.file_uploader("اختر صورة...", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None and model is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption='الصورة المرفوعة', use_container_width=True)
+    
+    # تجهيز الصورة للموديل
+    img = image.resize((224, 224))
+    img_array = np.array(img.convert('RGB')) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    
+    # التوقع
+    with st.spinner('جاري التحليل...'):
+        prediction = model.predict(img_array)
+        
+        if prediction[0][0] > 0.5:
+            st.error(f"النتيجة: احتمال إصابة (PNEUMONIA) - الدقة: {prediction[0][0]:.2%}")
+        else:
+            st.success(f"النتيجة: الرئة سليمة (NORMAL) - الدقة: {1 - prediction[0][0]:.2%}")
