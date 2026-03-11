@@ -6,7 +6,8 @@ import numpy as np
 # تحميل الموديل
 @st.cache_resource
 def load_my_model():
-return tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
+    return tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
+
 model = load_my_model()
 
 st.title("تشخيص الالتهاب الرئوي بالذكاء الاصطناعي 🩺")
@@ -30,4 +31,3 @@ if uploaded_file is not None:
         st.error(f"النتيجة: PNEUMONIA (مصاب) - الدقة: {prediction[0][0]:.2%}")
     else:
         st.success(f"النتيجة: NORMAL (سليم) - الدقة: {1 - prediction[0][0]:.2%}")
-
