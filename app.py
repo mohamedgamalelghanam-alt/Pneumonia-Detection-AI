@@ -3,42 +3,32 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 
-# إعداد الصفحة
-st.set_page_config(page_title="Pneumonia Detection", page_icon="🩺")
-
+# تحميل الموديل بنمط التوافق
 @st.cache_resource
 def load_my_model():
-    try:
-        # دي الطريقة اللي هتجبره يفتح الموديل كأنه "صندوق أسود" ملوش دعوة بالإعدادات
-        model = tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
-        return model
-    except Exception as e:
-        # لو فشل، بنحاول نفتحه بطريقة الـ custom_objects الفاضية
-        return tf.keras.models.load_model('my_pneumonia_model.h5', compile=False, custom_objects={})
+    # استخدام compile=False ضروري جداً هنا
+    return tf.keras.models.load_model('my_pneumonia_model.h5', compile=False)
 
 model = load_my_model()
 
 st.title("تشخيص الالتهاب الرئوي بالذكاء الاصطناعي 🩺")
-st.write("ارفع صورة أشعة الصدر لتحليلها")
+st.write("ارفع صورة أشعة الصدر (Chest X-ray) للتحليل الفوري")
 
 uploaded_file = st.file_uploader("اختر صورة...", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None and model is not None:
+if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption='الصورة المرفوعة', use_container_width=True)
     
-    with st.spinner('جاري الفحص...'):
-        # تحضير الصورة
-        img = image.resize((224, 224))
-        img_array = np.array(img.convert('RGB')) / 255.0
-        img_array = np.expand_dims(img_array, axis=0).astype('float32')
-        
-        # التوقع بطريقة "الاستدعاء المباشر" عشان نهرب من مشاكل الـ Dense layers
-        prediction = model(img_array, training=False)
-        prob = float(prediction[0][0])
-        
-        st.markdown("---")
-        if prob > 0.5:
-            st.error(f"⚠️ النتيجة: احتمال وجود التهاب رئوي (PNEUMONIA) - الدقة: {prob:.2%}")
-        else:
-            st.success(f"✅ النتيجة: الرئة سليمة (NORMAL) - الدقة: {1-prob:.2%}")
+    # تحضير الصورة للموديل
+    img = image.resize((224, 224))
+    img_array = np.array(img.convert('RGB')) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    
+    # التوقع
+    prediction = model.predict(img_array)
+    
+    if prediction[0][0] > 0.5:
+        st.error(f"النتيجة: PNEUMONIA (مصاب) - الثقة: {prediction[0][0]:.2%}")
+    else:
+        st.success(f"النتيجة: NORMAL (سليم) - الثقة: {1 - prediction[0][0]:.2%}")
