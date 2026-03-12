@@ -40,3 +40,4 @@ if uploaded_file is not None and model is not None:
             st.error(f"⚠️ النتيجة: احتمال وجود التهاب رئوي (PNEUMONIA) - الدقة: {result:.2%}")
         else:
             st.success(f"✅ النتيجة: الرئة سليمة (NORMAL) - الدقة: {1 - result:.2%}")
+
